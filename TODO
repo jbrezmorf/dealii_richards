@@ -1,0 +1,135 @@
+TODO: clanek
+
+1) 
+- odvodit preskalovani  - > redukce parametru modelu
+
+2) oscilace MH:
+- demonstrovat oscilace a porovnani s LMH 
+- pouzit odvozeni z PANM pro MH 1D
+
+3) podrobne LMH schema a jeho modifikace pro O2 v case podle clanku
+? lze pri adaptivnim kroku + O2 schematu pozorovat oscilace (napr na analytickem reseni pokud bych
+ho resil na vetsi oblasti s vetsim casovym krokem), ktere bych byl schopen eliminovat ?
+
+* dodelat dynamicky casovy krok
+* dodelat vypocet spravne rychlosti (pres lambda)
+* dodelat vypocet variace rychlosti
+
+- testy konvergence O2 podle clanku na analytickem reseni
+- testy konvergence na 1D richardsovi:
+  - pro ruzne casove skaly a ruzna n: chyba v p, chyba v q, oscilace q, bilance (celkova)
+
+4) osetrene O2 schema: max, resp. zhlazeny orez - 
+moznosti;
+* otestovat funkcnost i pro zapornou diferenci saturace
+* pouzit shodu znamenka O1 a O2 schematu pro prijeti nebo zamitnuti kroku
+* garantovany estimator chyby ... scifi
+* pokud v taylorove rozvoji pouzivam prvnik K clenu pro aproximaci casove derivace, a K+1 clen je vetsi,
+  pak musim bud zvysit rad nebo zmensit krok
+
+* studium a porovnani s MOL, baliky pro integraci ODE; nejde primo pouzit pri prostorove adaptivite, a 
+  pokud chci kvalitni pole toku, ale pokud budou stabilne fungovat, muzu je prostudovat hloub a pouzit
+
+
+
+10.1. -------------
+- testovat hladky orez v casovem clenu, jak ten orez funguje v rychlosti
+- optimalizovat orez
+- optimalizace nelinearniho solveru
+- testy konvergence
+
+30.12. ------------
+* potrebuji vhodne kriterium pro "dobrou aproximaci" tj. bez nezadoucich oscilaci
+  problem je v tom, ze pro make vodivosti je zhlazujici elipticky clen hodne slaby, snad by proto pomohlo mit 
+  tol_max radove okolo Ks ( otazka ja s tim jeste hraje dx)
+
+* newton s LS si s pocatecnim priblizenim take poradi, ale hure nez Pickard
+
+zkusit, zda by nebylo lepsi mit jako s_parametr neco jineho nez vysku posunuti
+* taky by mohlo pomoct regularizovat vodivost, 
+28.12. ------------
+
+  pro s<1 pouzivat symetrickou verzi az pak nesymetrickou
+- do sestavovani matice zahrnout derivaci lambdy/thety
+- presnejsi nastavovani conv state a returny v nonlin solveru
+
+15.12. ------------
+
+Potrebuju vypatrat jaka vlastnost hydro funkci dela binec v reziduu
+- kouknout na aktualni vysledky v paraview
+- spustit znova ...
+- 1) pouziti hladke saturace (bez orezu)
+  2) naopak zkusit zhladit vodivost
+
+- moznost interpolovat do Q1, P2, ...
+  i jina pole nez piezo vysky/tlaky
+- proc line search vede k narustu residua !!
+- jak tezke implementovat multilevel metodu - zmena dof handleru ?
+  ? interpolacni a restrikcni operatory ?
+
+- nelinearni system ma blbou vlastnost, ze reziduum bez provedeni lin. kroku je casto mensi nez 
+  po prvni linearni aproximaci, nepomohlo by system regularizovat nejakym clenem, ktery by postupne mizel 
+  (homotopocka metoda)
+
+6.12. ---------------
+
+- pocitat chybu rychlosti v casech t/2 a testovat chybu bilance
+- vypocet chyby  rychlosti pomoci Gaussovy kvadratury n=3 (integruje presne do p=5)
+- interpolace do DP2 a Q1
+- je kriterium pro zvetsovani lambda optimalni/robusni i pro jine site, kde rozdil casoveho a tokoveho clenu muze byt jiny ?
+- nastavit toleransi nelinearniho resice zavislou na dt, je mozne pouzit nizsi toleranci pri zapocitavani chyby ve vlhkosti?
+
+pro clanek:
+1) porovnani MH - LMH, demonstrace oscilaci na 1D infiltraci popr. 1D analytickem a na 2d neregularni siti (viz. clanek o LMH Richardsovi)
+2) overeni demonstrace CN metody:
+- 1d analyticke, grafy konvergence
+- 1d infiltrace
+- 2d infiltrace homogenni
+- 2d infiltrace nehomogenni
+
+
+
+22.11. ------------------
+- kvantitativni porovnani s s1d
+- lepsi postprocesing  pro splneni rovnice kontinuity:
+   1) residuum -> odlozeny zdroj
+   2) rozpocitani rezidua do toku a elementovych rychlosti
+
+- vypocet hranicnich toku a celkove bilance (postprocesovanych toku a saturace)
+- test nejake adaptivity
+
+
+teoreticke otazky:
+- jak velke je poruseni principu maxima
+- overit nezavislost na casovem kroku
+- 
+8.10. -------------------
+
+- vygenerovat nejaky vektor hranovych tlaku -> output
+  (poroblem jak vystupovat saturaci, ktera bude nezavisla ??
+   leda ji mit ve vypocetnim dofhandleru, ale mit matici jen pro vypocet tlaku - to se mi posledne nedarilo
+   zatim se na vystup pripocitavane sturace vykaslat
+  )
+
+
+
+3) pokusit se rozchodit adaptivitu ve MH kodu
+   
+prubeh vypoctu:
+
+- sestaveni rovnice pro hranove tlaky 
+  (vodivost se pocita bud s prumeru tlaku, nebo jako prumer vodivosti na hranach)
+  + vypocet residua
+- residualni kriterium, test kovergence non lin solveru
+- lin. solver na hranove matici
+
+- rekonstrukce: rychlosti, elementovych tlaku a saturaci (jen pro ucely vystupu a estimatoru)
+   
+Tj. idealne DOF handler jen pro FE_Faces a RT, P0 pouzit jen v assemblaci.
+Pro vypocty lokalnich matic mit samostatnou tridu 
+cykly pres elementy budou v: assemblaci, rekonstrukci, estimatoru
+
+Pro vystup potrebuju DOF handler kde jsou: Rychlosti, elementove tlaky, elementove saturace, 
+postprocesovane P2 tlaky, hranove tlaky ?? 
+ 
+PROBLEM: rekonstruovane rychlosti nejsou rovny na hranach 
